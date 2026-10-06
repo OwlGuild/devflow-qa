@@ -1,3 +1,2 @@
 # devflow-qa
-
-Minimal skeleton. Add real code locally with correct git identity.
+Contract, load and coverage checks for DevFlow. Part of OwlGuild/DevFlow.
