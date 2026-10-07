@@ -1,0 +1,52 @@
+name: Smoke
+
+on:
+  workflow_dispatch:
+
+jobs:
+  http:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: devflow-api
+            url: https://devflow-api-jtmi.onrender.com/health/
+            expect: '"ok"'
+          - name: docmind
+            url: https://docmind-7p1f.onrender.com/health/
+            expect: '"ok"'
+          - name: devflow-web
+            url: https://devflow-web-agbx.onrender.com/
+            expect: DevFlow
+    steps:
+      - name: check ${{ matrix.name }}
+        env:
+          URL: ${{ matrix.url }}
+          EXPECT: ${{ matrix.expect }}
+        run: |
+          for i in 1 2 3 4 5; do
+            code=$(curl -sS -o /tmp/body -w '%{http_code}' --max-time 60 "$URL" || echo 000)
+            echo "attempt $i -> HTTP $code"
+            if [ "$code" = "200" ]; then
+              head -c 300 /tmp/body; echo
+              grep -qF "$EXPECT" /tmp/body
+              exit 0
+            fi
+            sleep 15
+          done
+          echo "service did not return 200"
+          exit 1
+
+  realtime:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install ws
+      - name: websocket handshake
+        run: node smoke/realtime.mjs
+        env:
+          REALTIME_URL: wss://devflow-realtime.onrender.com
