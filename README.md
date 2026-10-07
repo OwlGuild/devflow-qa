@@ -1,76 +1,73 @@
-# devflow-api
+# devflow-qa
 
-REST API for **DevFlow**, the open-source team task-management product. Part of
-[OwlGuild](https://github.com/OwlGuild).
+Contract and load checks across the DevFlow stack. This repository exists because "it works
+locally" is not a claim — it is a hypothesis.
 
-[![CI](https://github.com/OwlGuild/devflow-api/actions/workflows/ci.yml/badge.svg)](https://github.com/OwlGuild/devflow-api/actions/workflows/ci.yml)
-[![Python](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/)
-[![Django](https://img.shields.io/badge/django-5.2-092E20.svg)](https://www.djangoproject.com/)
-[![DRF](https://img.shields.io/badge/DRF-3.18-brightgreen.svg)](https://www.django-rest-framework.org/)
+[![CI](https://github.com/OwlGuild/devflow-qa/actions/workflows/ci.yml/badge.svg)](https://github.com/OwlGuild/devflow-qa/actions/workflows/ci.yml)
+[![k6](https://img.shields.io/badge/load-k6-d01010.svg)](https://k6.io/)
+[![pytest](https://img.shields.io/badge/tests-pytest-555555.svg)](https://pytest.org/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
-
-**Live:** https://devflow-api-jtmi.onrender.com/health/ · [readiness](https://devflow-api-jtmi.onrender.com/health/ready/)
 
 ## Why this exists
 
-Task tools fail on two fronts: they are slow to respond, or they are a black box about what
-your team is doing. This API keeps the data model small enough to reason about and the
-endpoints boring on purpose, so the hard part stays the product logic rather than the plumbing.
+Four repositories ship one product. Individually each can pass its tests while the whole thing
+still breaks. This repo tests the seams: HTTP contracts and behaviour under load.
+
+## What runs
+
+| Suite | Tool | What it proves |
+|---|---|---|
+| Contract | pytest | status codes, response shape and routing stay stable |
+| Load | k6 | p95 latency and error rate stay inside budget at target concurrency |
+
+Both run without external dependencies: the contract suite boots its own fixture server, so it
+is green in CI before any service is deployed.
 
 ## Quickstart
 
 ```bash
-git clone https://github.com/OwlGuild/devflow-api.git
-cd devflow-api
-cp .env.example .env
-docker compose -f docker-compose.dev.yml up --build
+git clone https://github.com/OwlGuild/devflow-qa.git
+cd devflow-qa
+pip install -r requirements.txt
+pytest -q            # contract suite
+k6 run load/health.js   # load profile, needs BASE_URL
 ```
 
-Local health check:
+To point the suite at a real deployment instead of the fixture:
 
 ```bash
-curl http://localhost:8000/health/
-# {"status": "ok", "service": "devflow-api"}
+BASE_URL=https://api.example.com pytest -q
 ```
 
-## API
+## Thresholds
 
-| Method | Path | Description |
-|---|---|---|
-| `GET` | `/health/` | liveness probe used by CI and uptime checks |
-| `GET` | `/health/ready/` | readiness probe, verifies the database |
+```js
+// load/config.js
+export default {
+  thresholds: {
+    http_req_duration: ['p(95)<250'],
+    http_req_failed: ['rate<0.01'],
+  },
+};
+```
 
-Endpoints are added behind the same contract: JSON in, JSON out, explicit status codes, and
-a test for every behaviour change.
-
-## Stack
-
-| Layer | Choice |
-|---|---|
-| Runtime | Python 3.12 |
-| Framework | Django 5 + Django REST Framework |
-| Database | PostgreSQL 16, SQLite for tests |
-| Server | Django dev server locally, Gunicorn in Docker |
-| Container | Docker + docker-compose (api, Postgres) |
+Thresholds are assertions, not charts. If they fail, the build fails.
 
 ## Testing
 
 ```bash
-pip install -r requirements.txt
 pytest -q
-# 8 passed
+# 3 passed
 ```
 
-The suite covers contract behaviour — status codes, response shape and routing — rather than
-implementation details, so refactors do not fail the build while a broken API would. CI runs
-`manage.py check`, `check --deploy`, `pytest` and a Docker build on every push.
+CI runs the contract suite on every push; the load profile runs against a deployed target.
 
 ## Roadmap
 
-- Task, project and membership models with migrations
-- Authentication and workspace-scoped permissions
-- Celery workers on Redis for background jobs
-- OpenAPI schema published for `devflow-web` to generate types from
+- JSON Schemas shared with `devflow-api`, so a field change fails here instead of in production
+- Protocol checks against `devflow-realtime` event frames
+- Coverage gate with `pytest-cov`
+- Load profiles for board and search endpoints
 
 ## Ownership
 
@@ -78,9 +75,10 @@ Both maintainers of [OwlGuild](https://github.com/OwlGuild) commit here.
 
 | Area | Maintainer |
 |---|---|
-| Domain models, endpoints, migrations | [@MarziehAkrami](https://github.com/MarziehAkrami) |
-| Client integration | [@AhmadGolbooee](https://github.com/AhmadGolbooee) |
-| CI, Docker, docs | shared |
+| Contract suites | shared |
+| Load profiles and thresholds | [@MarziehAkrami](https://github.com/MarziehAkrami) |
+| Protocol checks | [@AhmadGolbooee](https://github.com/AhmadGolbooee) |
+| Triaging failures | shared |
 
 ## License
 
