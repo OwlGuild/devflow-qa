@@ -15,7 +15,7 @@ export const options = {
 };
 
 export default function () {
-  const res = http.get(${__ENV.BASE_URL}/health/);
+  const res = http.get(`${__ENV.BASE_URL}/health/`);
   check(res, {
     'status is 200': (r) => r.status === 200,
     'latency < 200ms': (r) => r.timings.duration < 200,
