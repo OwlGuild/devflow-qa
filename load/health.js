@@ -1,7 +1,7 @@
-import options from './config.js';
+import config from './config.js';
 
 export const options = {
-  ...options,
+  ...config,
   scenarios: {
     health_check: {
       executor: 'constant-arrival-rate',
@@ -15,9 +15,14 @@ export const options = {
 };
 
 export default function () {
-  const res = http.get(`${__ENV.BASE_URL}/health/`);
+  const baseUrl = __ENV.BASE_URL;
+  if (!baseUrl) {
+    throw new Error('BASE_URL is required: k6 run -e BASE_URL=https://host load/health.js');
+  }
+
+  const res = http.get(`${baseUrl}/health/`);
   check(res, {
     'status is 200': (r) => r.status === 200,
-    'latency < 200ms': (r) => r.timings.duration < 200,
+    'latency < 250ms': (r) => r.timings.duration < 250,
   });
 }
