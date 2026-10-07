@@ -44,6 +44,18 @@ jobs:
           echo "service did not return 200"
           exit 1
 
+  web-content:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: landing page content
+        env:
+          WEB_URL: https://devflow-web-agbx.onrender.com/
+        run: python smoke/web_content.py
+
   realtime:
     runs-on: ubuntu-latest
     steps:
