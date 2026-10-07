@@ -1,11 +1,14 @@
+﻿*.pyc
 __pycache__/
-*.py[cod]
+.pytest_cache/
 .venv/
 venv/
 .env
 .env.*
 !.env.example
-output/
-reports/
+db.sqlite3
+staticfiles/*
+!staticfiles/.gitkeep
+node_modules/
 .DS_Store
 *.log
