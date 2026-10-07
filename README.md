@@ -64,8 +64,9 @@ pytest -q
 # 3 passed
 ```
 
-CI runs the contract suite on every push. The load profile is manual — k6 is an external
-tool — and runs against whatever target you pass:
+CI runs the contract suite on every push and bundles the k6 scripts, so a broken import fails
+here instead of during a load run. Running the profile itself is manual — k6 is an external
+tool — and targets whatever you pass:
 
 ```bash
 k6 run -e BASE_URL=https://devflow-api-jtmi.onrender.com load/health.js
