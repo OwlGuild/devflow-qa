@@ -16,6 +16,6 @@ jobs:
       - run: pytest -q
       - name: k6 scripts bundle and validate
         run: |
-          docker run --rm -v "$PWD:/w" -w /w grafana/k6:latest archive load/health.js /tmp/health.zip
-          docker run --rm -v "$PWD:/w" -w /w grafana/k6:latest archive load/config.js /tmp/config.zip
-          docker run --rm -v "$PWD:/w" -w /w grafana/k6:latest inspect load/health.js >/dev/null
+          docker run --rm -v "$PWD:/w" -w /w grafana/k6:latest archive load/health.js
+          docker run --rm -v "$PWD:/w" -w /w grafana/k6:latest archive load/config.js
+          docker run --rm -v "$PWD:/w" -w /w grafana/k6:latest inspect load/health.js > /dev/null
