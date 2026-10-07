@@ -3,6 +3,7 @@
 Contract, load and coverage checks across the DevFlow stack. This repository exists because
 "it works locally" is not a claim — it is a hypothesis.
 
+[![CI](https://github.com/OwlGuild/devflow-qa/actions/workflows/ci.yml/badge.svg)](https://github.com/OwlGuild/devflow-qa/actions/workflows/ci.yml)
 [![k6](https://img.shields.io/badge/load-k6-d01010.svg)](https://k6.io/)
 [![pytest](https://img.shields.io/badge/tests-pytest-555555.svg)](https://pytest.org/)
 [![Coverage](https://img.shields.io/badge/coverage-enforced-brightgreen.svg)](#testing)
