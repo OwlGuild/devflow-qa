@@ -18,10 +18,12 @@ still breaks. This repo tests the seams: HTTP contracts and behaviour under load
 | Suite | Tool | What it proves |
 |---|---|---|
 | Contract | pytest | status codes, response shape and routing stay stable |
-| Load | k6 | p95 latency and error rate stay inside budget at target concurrency |
+| Load | k6 | p95 latency, error rate and check rate stay inside budget |
+| Live smoke | GitHub Actions | the four deployed services, the WebSocket handshake and the landing page still answer |
 
-Both run without external dependencies: the contract suite boots its own fixture server, so it
-is green in CI before any service is deployed.
+The contract suite boots its own fixture server, so it is green in CI before any service is
+deployed. Point it at a real deployment with `BASE_URL` when you want the same assertions
+against production. The live smoke matrix runs on demand and daily against the Render URLs.
 
 ## Quickstart
 
@@ -29,8 +31,8 @@ is green in CI before any service is deployed.
 git clone https://github.com/OwlGuild/devflow-qa.git
 cd devflow-qa
 pip install -r requirements.txt
-pytest -q            # contract suite
-k6 run load/health.js   # load profile, needs BASE_URL
+pytest -q            # contract suite against the fixture server
+k6 run -e BASE_URL=http://localhost:8000 load/health.js   # load profile
 ```
 
 To point the suite at a real deployment instead of the fixture:
@@ -47,11 +49,13 @@ export default {
   thresholds: {
     http_req_duration: ['p(95)<250'],
     http_req_failed: ['rate<0.01'],
+    checks: ['rate>0.99'],
   },
 };
 ```
 
-Thresholds are assertions, not charts. If they fail, the build fails.
+Thresholds are assertions, not charts. If they fail, the build fails — including the checks,
+so a `latency < 250ms` check that stops passing cannot be silently green.
 
 ## Testing
 
@@ -60,7 +64,12 @@ pytest -q
 # 3 passed
 ```
 
-CI runs the contract suite on every push; the load profile runs against a deployed target.
+CI runs the contract suite on every push. The load profile is manual — k6 is an external
+tool — and runs against whatever target you pass:
+
+```bash
+k6 run -e BASE_URL=https://devflow-api-jtmi.onrender.com load/health.js
+```
 
 ## Roadmap
 
