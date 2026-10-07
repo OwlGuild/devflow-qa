@@ -4,6 +4,9 @@ import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import pytest
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 class _Handler(BaseHTTPRequestHandler):
@@ -30,6 +33,11 @@ class _Handler(BaseHTTPRequestHandler):
 
 @pytest.fixture(scope="session", autouse=True)
 def live_server():
+    """Default BASE_URL to a local fixture, but never override an explicit target."""
+    if os.environ.get("BASE_URL"):
+        yield
+        return
+
     server = ThreadingHTTPServer(("127.0.0.1", 0), _Handler)
     threading.Thread(target=server.serve_forever, daemon=True).start()
     os.environ["BASE_URL"] = "http://127.0.0.1:{}".format(server.server_address[1])
