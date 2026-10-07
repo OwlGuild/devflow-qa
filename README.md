@@ -1,48 +1,51 @@
 # devflow-qa
 
-Contract, load and coverage checks across the DevFlow stack. This repository exists because
-"it works locally" is not a claim — it is a hypothesis.
+Contract and load checks across the DevFlow stack. This repository exists because "it works
+locally" is not a claim — it is a hypothesis.
 
 [![CI](https://github.com/OwlGuild/devflow-qa/actions/workflows/ci.yml/badge.svg)](https://github.com/OwlGuild/devflow-qa/actions/workflows/ci.yml)
 [![k6](https://img.shields.io/badge/load-k6-d01010.svg)](https://k6.io/)
 [![pytest](https://img.shields.io/badge/tests-pytest-555555.svg)](https://pytest.org/)
-[![Coverage](https://img.shields.io/badge/coverage-enforced-brightgreen.svg)](#testing)
 [![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
 
 ## Why this exists
 
 Four repositories ship one product. Individually each can pass its tests while the whole thing
-still breaks. This repo tests the seams: the API contract, the realtime protocol, and the
-behaviour under load.
+still breaks. This repo tests the seams: HTTP contracts and behaviour under load.
 
 ## What runs
 
 | Suite | Tool | What it proves |
 |---|---|---|
-| Contract | pytest + schemas | the API responses still match what `devflow-web` expects |
-| Protocol | pytest | `devflow-realtime` events match the declared types |
+| Contract | pytest | status codes, response shape and routing stay stable |
 | Load | k6 | p95 latency and error rate stay inside budget at target concurrency |
-| Coverage | pytest-cov | project-wide coverage never drops below the enforced floor |
+
+Both run without external dependencies: the contract suite boots its own fixture server, so it
+is green in CI before any service is deployed.
 
 ## Quickstart
 
 ```bash
 git clone https://github.com/OwlGuild/devflow-qa.git
 cd devflow-qa
-cp .env.example .env
-docker compose up -d        # start the stack under test
 pip install -r requirements.txt
-pytest                      # contract and protocol suites
-k6 run load/smoke.js        # smoke load profile
+pytest -q            # contract suite
+k6 run load/health.js   # load profile, needs BASE_URL
+```
+
+To point the suite at a real deployment instead of the fixture:
+
+```bash
+BASE_URL=https://api.example.com pytest -q
 ```
 
 ## Thresholds
 
 ```js
-// load/baseline.js
-export const options = {
+// load/config.js
+export default {
   thresholds: {
-    http_req_duration: ['p(95)<400'],
+    http_req_duration: ['p(95)<250'],
     http_req_failed: ['rate<0.01'],
   },
 };
@@ -50,11 +53,21 @@ export const options = {
 
 Thresholds are assertions, not charts. If they fail, the build fails.
 
-## How contract tests stay honest
+## Testing
 
-Responses are checked against JSON Schemas that both the API and this repository read. When the
-API changes a field, either the schema is updated deliberately or the test fails — there is no
-third option where the client silently breaks in production.
+```bash
+pytest -q
+# 3 passed
+```
+
+CI runs the contract suite on every push; the load profile runs against a deployed target.
+
+## Roadmap
+
+- JSON Schemas shared with `devflow-api`, so a field change fails here instead of in production
+- Protocol checks against `devflow-realtime` event frames
+- Coverage gate with `pytest-cov`
+- Load profiles for board and search endpoints
 
 ## Ownership
 
@@ -62,10 +75,9 @@ Both maintainers of [OwlGuild](https://github.com/OwlGuild) commit here.
 
 | Area | Maintainer |
 |---|---|
-| Contract suites and schemas | shared |
+| Contract suites | shared |
 | Load profiles and thresholds | [@MarziehAkrami](https://github.com/MarziehAkrami) |
 | Protocol checks | [@AhmadGolbooee](https://github.com/AhmadGolbooee) |
-| Coverage gate in CI | shared |
 | Triaging failures | shared |
 
 ## License
