@@ -51,7 +51,7 @@ jobs:
               fi
               exit 0
             fi
-            sleep 15
+            [ "$i" = 6 ] || sleep 15
           done
           echo "service did not return 200"
           exit 1
@@ -79,7 +79,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: npm install ws
+      - run: npm install ws@8
       - name: websocket handshake
         run: node smoke/realtime.mjs
         env:
