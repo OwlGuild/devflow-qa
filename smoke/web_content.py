@@ -44,7 +44,8 @@ def main() -> int:
                 break
         except Exception as exc:  # noqa: BLE001 - any transport error is retryable
             print(f"attempt {attempt} -> {type(exc).__name__}: {exc}")
-        time.sleep(15)
+        if attempt < ATTEMPTS:
+            time.sleep(15)
     else:
         print("landing page did not return 200")
         return 1
