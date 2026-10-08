@@ -21,9 +21,11 @@ still breaks. This repo tests the seams: HTTP contracts and behaviour under load
 | Load | k6 | p95 latency, error rate and check rate stay inside budget |
 | Live smoke | GitHub Actions | the four deployed services, the WebSocket handshake and the landing page still answer |
 
-The contract suite boots its own fixture server, so it is green in CI before any service is
-deployed. Point it at a real deployment with `BASE_URL` when you want the same assertions
-against production. The live smoke matrix runs on demand and daily against the Render URLs.
+The contract suite runs against the deployed `devflow-api` in CI — with retries, so a
+cold-starting instance is waited out rather than failed. Without `BASE_URL` it boots its own
+fixture server, so it stays green locally before any service is deployed. Point it at any
+other deployment with `BASE_URL` to run the same assertions elsewhere. The live smoke matrix
+runs on demand and daily against the Render URLs.
 
 ## Quickstart
 
@@ -54,8 +56,10 @@ export default {
 };
 ```
 
-Thresholds are assertions, not charts. If they fail, the build fails — including the checks,
-so a `latency < 250ms` check that stops passing cannot be silently green.
+Thresholds are assertions, not charts: when a run breaches one, k6 exits non-zero, so a
+`latency < 250ms` check that stops passing cannot come back green. CI bundles and inspects
+the scripts on every push — it does not run the profile — so a broken script fails the build
+before anyone puts load on a service.
 
 ## Testing
 
